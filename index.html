@@ -17,6 +17,7 @@
     </button>
     <aside id="sidebar" class="sidebar" aria-hidden="true">
         <div class="sidebar-header">
+            <!-- removed logo text per request -->
             <button class="sidebar-close" aria-label="Close menu">×</button>
         </div>
         <ul class="sidebar-links">
@@ -157,9 +158,45 @@
         </div>
     </footer>
 
-    <!-- Vanta background scripts -->
+    <!-- Corner Sleeping Cat (background, top-right) -->
+    <div class="corner-cat-bg" aria-label="Sleeping cat" role="img">
+        <svg class="cat-svg" viewBox="0 0 140 100" aria-hidden="true">
+            <g class="cat-breath">
+                <!-- Tail (sways) -->
+                <g class="tail" transform="translate(100,60)">
+                    <path d="M0 0 C -8 10, -6 22, 4 32 S 26 56, 8 72 S -12 92, 6 98" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                <!-- Body group -->
+                <g class="body">
+                    <ellipse cx="86" cy="64" rx="36" ry="20" fill="none" stroke="currentColor" stroke-width="2"/>
+                </g>
+                <!-- Head + face group (moved a bit forward and higher) -->
+                <g class="head">
+                    <circle cx="52" cy="40" r="14" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <!-- Ears -->
+                    <path d="M42 30 L48 18 L54 30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M60 30 L56 18 L64 30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Eyes (closed curves) -->
+                    <path class="eye-closed left" d="M45 40 Q48 42 51 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path class="eye-closed right" d="M54 40 Q57 42 60 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Eyes open (hidden by default) -->
+                    <ellipse class="eye-open left" cx="48" cy="39.6" rx="2.6" ry="2.6" fill="currentColor"/>
+                    <ellipse class="eye-open right" cx="57" cy="39.6" rx="2.6" ry="2.6" fill="currentColor"/>
+                    <!-- Tiny nose -->
+                    <circle cx="52.5" cy="44" r="1.2" fill="currentColor"/>
+                </g>
+            </g>
+            <!-- Sleep Zs -->
+            <g class="zzz" fill="currentColor">
+                <text x="92" y="20">z</text>
+                <text x="100" y="12">z</text>
+                <text x="108" y="6">z</text>
+            </g>
+        </svg>
+    </div>
+
+    <!-- p5 for background sketch -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.trunk.min.js"></script>
     <!-- Main script -->
     <script src="script.js"></script>
 </body>

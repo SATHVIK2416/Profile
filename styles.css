@@ -205,3 +205,69 @@ html.perf .section-title, html.perf .about-content, html.perf .project-card, htm
 /* Perf mode: remove expensive blur and smooth-scroll */
 html.perf .navbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(0,0,0,0.95); }
 html.perf html { scroll-behavior: auto; }
+
+/* Corner Sleeping Cat (background, top-right) posture and visuals */
+.corner-cat-bg { position: fixed; top: 14px; right: 16px; z-index: 900; color: rgba(255,255,255,0.75); pointer-events: auto; }
+.corner-cat-bg .cat-svg { width: 124px; height: 96px; display: block; }
+
+/* Breathing remains subtle on body; head slightly forward via translation */
+.cat-svg .body { transform-origin: 86px 64px; }
+.cat-svg .head { transform-origin: 52px 40px; transform: translateY(-2px) translateX(2px); }
+
+/* Thread-like tail sway (smaller amplitude) */
+@keyframes tail-thread-sway {
+  0%, 100% { transform: translate(100px,60px) rotate(2deg); }
+  50% { transform: translate(100px,60px) rotate(-4deg); }
+}
+.cat-svg .tail { animation: tail-thread-sway 3.2s ease-in-out infinite; transform-origin: 0 0; }
+.cat-svg .tail path { stroke-width: 1; opacity: 0.85; }
+
+/* Wink/hover: only left eye opens */
+.cat-svg .eye-open, .cat-svg .eye-closed { transition: opacity .2s ease; }
+.cat-svg .eye-open { opacity: 0; transform: scaleY(0.1); transform-origin: center; transition: transform .18s ease, opacity .18s ease; }
+.corner-cat-bg:hover .cat-svg .eye-closed.left { opacity: 0; }
+.corner-cat-bg:hover .cat-svg .eye-open.left { opacity: 1; transform: scaleY(1); }
+
+/* Awake (sit upright): rotate head up slightly, compress body a bit, hide Zzz */
+@keyframes sit-upright {
+  0% { transform: none; }
+  100% { transform: translateY(-4px) rotate(-6deg); }
+}
+.corner-cat-bg.wake .head { animation: sit-upright 0.28s ease forwards; }
+.corner-cat-bg.wake .body { transform: scaleY(0.98); }
+.corner-cat-bg.wake .zzz { opacity: 0; transition: opacity .2s ease; }
+/* When awake, both eyes open */
+.corner-cat-bg.wake .eye-closed { display: none; }
+.corner-cat-bg.wake .eye-open { display: block; opacity: 1; transform: scaleY(1); }
+
+/* Return-to-sleep animation hint (eyes will flip via JS delay) */
+.corner-cat-bg.sleep .head { transform: translateY(-2px) translateX(2px); }
+
+/* Animated Zzz: smooth float, rotate, fade (staggered) */
+@keyframes zzz-float-1 {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.9) rotate(0deg); }
+  20% { opacity: 0.7; }
+  100% { opacity: 0; transform: translate(10px, -16px) scale(1) rotate(-6deg); }
+}
+@keyframes zzz-float-2 {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.9) rotate(0deg); }
+  20% { opacity: 0.7; }
+  100% { opacity: 0; transform: translate(12px, -18px) scale(1.02) rotate(-8deg); }
+}
+@keyframes zzz-float-3 {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.9) rotate(0deg); }
+  20% { opacity: 0.7; }
+  100% { opacity: 0; transform: translate(14px, -20px) scale(1.04) rotate(-10deg); }
+}
+.cat-svg .zzz text { animation: zzz-float-1 2.4s ease-in-out infinite; transform-origin: center; }
+.cat-svg .zzz text:nth-child(2) { animation: zzz-float-2 2.6s ease-in-out infinite .3s; }
+.cat-svg .zzz text:nth-child(3) { animation: zzz-float-3 2.8s ease-in-out infinite .6s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cat-svg .tail { animation: none !important; }
+  .corner-cat-bg.wake .head { animation: none !important; }
+  .cat-svg .zzz text { animation: none !important; }
+}
+
+/* Hide Zzz on hover */
+.corner-cat-bg:hover .zzz { opacity: 0; }

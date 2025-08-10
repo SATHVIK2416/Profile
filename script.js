@@ -119,89 +119,174 @@ document.addEventListener('DOMContentLoaded', function() {
         pill.setAttribute('data-delay', index * 100);
     });
 
-    // Vanta initialization moved to window load + idle to reduce main-thread contention
+    // Lightweight custom canvas background (Vanta-like) for hero
+    function createCanvasBackground(el, { lowPower = false } = {}) {
+        const canvas = document.createElement('canvas');
+        canvas.style.position = 'absolute';
+        canvas.style.inset = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.display = 'block';
+        canvas.style.opacity = '0';
+        el.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        let rafId = null;
+        let running = true;
+        let width = 0, height = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        function resize() {
+            const rect = el.getBoundingClientRect();
+            width = Math.max(200, Math.floor(rect.width));
+            height = Math.max(200, Math.floor(rect.height));
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = Math.floor(width * dpr);
+            canvas.height = Math.floor(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+        resize();
+
+        // Branch field parameters
+        let branchCount = lowPower ? 12 : 22;
+        let targetFPS = lowPower ? 30 : 60;
+        const branches = [];
+
+        function rand(min, max) { return Math.random() * (max - min) + min; }
+        function initBranches() {
+            branches.length = 0;
+            for (let i = 0; i < branchCount; i++) {
+                const x = rand(width * 0.15, width * 0.85);
+                const y = rand(height * 0.55, height * 0.98);
+                const speed = rand(0.15, 0.5) * (lowPower ? 0.7 : 1);
+                const angle = rand(-Math.PI * 0.05, Math.PI * 0.05);
+                branches.push({ x, y, baseX: x, baseY: y, t: rand(0, 1000), speed, angle, len: rand(80, 160) });
+            }
+        }
+    initBranches();
+
+        // Simple pseudo noise using sine combinations
+        function noise(n) { return Math.sin(n * 0.013) + Math.sin(n * 0.021) * 0.5 + Math.sin(n * 0.037) * 0.25; }
+
+        let lastTime = performance.now();
+        let acc = 0;
+        const frameInterval = 1000 / targetFPS;
+
+        function draw(now) {
+            if (!running) return;
+            rafId = requestAnimationFrame(draw);
+            const dt = Math.min(100, now - lastTime);
+            lastTime = now;
+            acc += dt;
+            if (acc < frameInterval) return; // frame skip to target fps
+            acc -= frameInterval;
+
+            // Fade the canvas slightly for trails
+            ctx.fillStyle = 'rgba(0,0,0,0.06)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw branches upward with gentle sway
+            for (let i = 0; i < branches.length; i++) {
+                const b = branches[i];
+                b.t += b.speed * (lowPower ? 0.7 : 1);
+                const sway = noise(b.t) * 24;
+                const thickness = lowPower ? 0.6 : 0.9;
+                ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+                ctx.lineWidth = thickness;
+                ctx.beginPath();
+                const segs = 24;
+                for (let s = 0; s <= segs; s++) {
+                    const p = s / segs;
+                    const nx = b.baseX + Math.sin(p * Math.PI) * sway;
+                    const ny = b.baseY - p * b.len;
+                    if (s === 0) ctx.moveTo(nx, ny);
+                    else ctx.lineTo(nx, ny);
+                }
+                ctx.stroke();
+
+                // Slight drift at base to create life
+                b.baseX += Math.sin(b.t * 0.003 + i) * 0.08;
+                b.baseY += Math.cos(b.t * 0.002 + i) * 0.05;
+
+                // Reset branch if out of bounds
+                if (b.baseY - b.len < -20) {
+                    b.baseX = rand(width * 0.15, width * 0.85);
+                    b.baseY = height + rand(0, 40);
+                    b.len = rand(80, 160);
+                    b.t = rand(0, 1000);
+                }
+            }
+        }
+
+        function onResize() {
+            resize();
+            // Re-init branches to adapt density/sizes
+            initBranches();
+        }
+
+        window.addEventListener('resize', onResize, { passive: true });
+        rafId = requestAnimationFrame(draw);
+
+        return {
+            setLowPower(v) {
+                lowPower = !!v;
+                branchCount = lowPower ? 12 : 22;
+                targetFPS = lowPower ? 30 : 60;
+                initBranches();
+            },
+            destroy() {
+                running = false;
+                if (rafId) cancelAnimationFrame(rafId);
+                window.removeEventListener('resize', onResize);
+                if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+            },
+            canvas
+        };
+    }
+
+    // Smooth Vanta canvas fade helpers and low-power tuning
+    function getTargetVantaOpacity() {
+        return document.documentElement.classList.contains('perf') ? 0.3 : 0.45;
+    }
+    function fadeInVantaCanvas() {
+        const canvas = document.querySelector('#vanta-bg canvas');
+        if (!canvas) return;
+        canvas.style.setProperty('opacity', '0', 'important');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            canvas.style.setProperty('opacity', String(getTargetVantaOpacity()), 'important');
+        }));
+    }
+    function fadeOutVantaCanvas(onDone) {
+        const canvas = document.querySelector('#vanta-bg canvas');
+        if (!canvas) { if (onDone) onDone(); return; }
+        canvas.style.setProperty('opacity', '0', 'important');
+        setTimeout(() => { if (onDone) onDone(); }, 320);
+    }
+
+    // Initialize custom background on hero after load, with idle scheduling
+    function scheduleVantaInit() {
+        const init = () => {
+            const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const host = document.getElementById('vanta-bg');
+            if (!host) return;
+            if (prefersReduced) return; // respect reduced motion
+            if (!window.bgEffect) {
+                const low = !!window.__LOW_PERF__;
+                window.bgEffect = createCanvasBackground(host, { lowPower: low });
+                setTimeout(fadeInVantaCanvas, 0);
+            }
+        };
+        if ('requestIdleCallback' in window) requestIdleCallback(init, { timeout: 1200 });
+        else setTimeout(init, 150);
+    }
 
     // Initialize/destroy Vanta strictly based on hero visibility
     const homeSection = document.getElementById('home');
     if ('IntersectionObserver' in window && homeSection) {
-        const heroObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const ratio = entry.intersectionRatio || 0;
-                if (ratio > 0) {
-                    // Any visible portion => ensure Vanta is running
-                    scheduleVantaInit();
-                } else {
-                    // Fully out of view check using bounding rect
-                    const rect = entry.boundingClientRect;
-                    const vh = window.innerHeight || document.documentElement.clientHeight;
-                    const fullyOut = rect.bottom <= 0 || rect.top >= vh;
-                    if (fullyOut) {
-                        if (window.vantaEffect && typeof window.vantaEffect.destroy === 'function') {
-                            fadeOutVantaCanvas(() => {
-                                if (window.vantaEffect && typeof window.vantaEffect.destroy === 'function') {
-                                    window.vantaEffect.destroy();
-                                    window.vantaEffect = null;
-                                }
-                            });
-                        }
-                    }
-                }
-            });
-        }, { threshold: [0, 0.01] });
-        heroObserver.observe(homeSection);
+        // Legacy canvas background observer disabled; p5 rings now controls background visibility.
     }
 });
-
-// Smooth Vanta canvas fade helpers and low-power tuning
-function getTargetVantaOpacity() {
-    return document.documentElement.classList.contains('perf') ? 0.3 : 0.45;
-}
-function fadeInVantaCanvas() {
-    const canvas = document.querySelector('#vanta-bg canvas');
-    if (!canvas) return;
-    canvas.style.setProperty('opacity', '0', 'important');
-    // Double RAF to ensure style & DOM ready before transitioning
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        canvas.style.setProperty('opacity', String(getTargetVantaOpacity()), 'important');
-    }));
-}
-function fadeOutVantaCanvas(onDone) {
-    const canvas = document.querySelector('#vanta-bg canvas');
-    if (!canvas) { if (onDone) onDone(); return; }
-    canvas.style.setProperty('opacity', '0', 'important');
-    setTimeout(() => { if (onDone) onDone(); }, 320); // match CSS transition ~0.3s
-}
-
-// Initialize Vanta TRUNK background on hero after load, with idle scheduling
-function scheduleVantaInit() {
-    const init = () => {
-        const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const vantaEl = document.getElementById('vanta-bg');
-        if (!prefersReduced && window.VANTA && window.VANTA.TRUNK && vantaEl && !window.vantaEffect) {
-            const low = !!window.__LOW_PERF__;
-            window.vantaEffect = window.VANTA.TRUNK({
-                el: vantaEl,
-                mouseControls: false,
-                touchControls: false,
-                gyroControls: false,
-                minHeight: 200.0,
-                minWidth: 200.0,
-                scale: low ? 0.8 : 1.0,
-                scaleMobile: low ? 0.7 : 0.9,
-                color: 0xffffff,
-                backgroundColor: 0x000000
-            });
-            // Fade in smoothly after canvas is attached
-            setTimeout(fadeInVantaCanvas, 0);
-        }
-    };
-
-    if ('requestIdleCallback' in window) {
-        requestIdleCallback(init, { timeout: 1200 });
-    } else {
-        setTimeout(init, 150);
-    }
-}
 
 // Lightweight FPS probe: enable perf mode on slower devices
 function enablePerfModeIfLowFPS() {
@@ -217,20 +302,18 @@ function enablePerfModeIfLowFPS() {
             if (fps < 45) {
                 window.__LOW_PERF__ = true;
                 document.documentElement.classList.add('perf');
-                // Reduce Vanta resolution dynamically if already running
-                if (window.vantaEffect && typeof window.vantaEffect.setOptions === 'function') {
-                    window.vantaEffect.setOptions({ scale: 0.8, scaleMobile: 0.7 });
+                if (window.bgEffect && typeof window.bgEffect.setLowPower === 'function') {
+                    window.bgEffect.setLowPower(true);
                 }
-                // Adjust target opacity for low-power mode
-                fadeInVantaCanvas();
+                // refresh fade target opacity under perf mode
+                const canvas = document.querySelector('#vanta-bg canvas');
+                if (canvas) canvas.style.setProperty('opacity', '0.3', 'important');
             }
             if (rafId) cancelAnimationFrame(rafId);
         }
     }
     rafId = requestAnimationFrame(loop);
 }
-
-// Run FPS probe after load
 window.addEventListener('load', enablePerfModeIfLowFPS, { once: true });
 
 // Apple-style preloader
@@ -285,22 +368,145 @@ menuToggle && menuToggle.addEventListener('click', openSidebar);
 sidebarClose && sidebarClose.addEventListener('click', closeSidebar);
 overlay && overlay.addEventListener('click', closeSidebar);
 
-// Close on ESC
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeSidebar();
 });
 
-// Close sidebar when clicking a nav link
 document.querySelectorAll('.sidebar .nav-link').forEach(link => {
     link.addEventListener('click', () => {
         closeSidebar();
     });
 });
 
-// Dispose Vanta on unload to avoid memory leaks
+// Dispose background on unload to avoid memory leaks
 window.addEventListener('beforeunload', function() {
-    if (window.vantaEffect && typeof window.vantaEffect.destroy === 'function') {
-        window.vantaEffect.destroy();
-        window.vantaEffect = null;
+    if (window.bgEffect && typeof window.bgEffect.destroy === 'function') {
+        window.bgEffect.destroy();
+        window.bgEffect = null;
     }
 });
+
+// p5 Concentric Wavy Rings in hero background
+(function attachP5Rings(){
+    const hostId = 'vanta-bg';
+    let sketchInstance = null;
+
+    function ringsSketch(p) {
+        let t = 0;
+        p.setup = function() {
+            const host = document.getElementById(hostId);
+            const rect = host.getBoundingClientRect();
+            const cnv = p.createCanvas(rect.width, rect.height);
+            cnv.parent(hostId);
+            p.pixelDensity(1);
+            p.noFill();
+            p.stroke(255); // white rings
+            p.strokeWeight(1.2); // slightly thicker
+        };
+        p.windowResized = function() {
+            const host = document.getElementById(hostId);
+            if (!host) return;
+            const rect = host.getBoundingClientRect();
+            p.resizeCanvas(rect.width, rect.height);
+        };
+        p.draw = function() {
+            const perf = document.documentElement.classList.contains('perf');
+            p.background(0, 0, 0);
+            p.translate(p.width/2, p.height/2);
+
+            const rings = 40;
+            const gap = 6.0;      // larger spacing
+            const baseR = 80;     // larger inner radius
+            const wobbleAmp = perf ? 4 : 6;
+            const wobbleFreq = 0.9;
+            const timeSpeed = perf ? 0.2 : 0.35;
+
+            t += 0.01 * timeSpeed;
+
+            for (let i = 0; i < rings; i++) {
+                const r = baseR + i * gap;
+                p.beginShape();
+                for (let a = 0; a < p.TWO_PI; a += 0.02) { // fewer points for perf
+                    const n = p.noise(
+                        0.6 * Math.cos(a) + 100,
+                        0.6 * Math.sin(a) + 200,
+                        i * 0.05 + t
+                    );
+                    const wobble = wobbleAmp * (n - 0.5) * 2 + 2 * Math.sin(a * wobbleFreq + t * 0.8);
+                    const rr = r + wobble;
+                    p.vertex(rr * Math.cos(a), rr * Math.sin(a));
+                }
+                p.endShape(p.CLOSE);
+            }
+        };
+    }
+
+    function mount() {
+        if (sketchInstance) return;
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const host = document.getElementById(hostId);
+        if (!host) return;
+        sketchInstance = new p5(ringsSketch);
+        // fade in canvas
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            const canvas = host.querySelector('canvas');
+            if (canvas) canvas.style.setProperty('opacity', '0.35', 'important');
+        }));
+    }
+    function unmount() {
+        const host = document.getElementById(hostId);
+        if (host) {
+            const canvas = host.querySelector('canvas');
+            if (canvas) canvas.style.setProperty('opacity', '0', 'important');
+        }
+        setTimeout(() => {
+            if (sketchInstance && typeof sketchInstance.remove === 'function') {
+                sketchInstance.remove();
+            }
+            sketchInstance = null;
+        }, 320);
+    }
+
+    // Observe hero visibility
+    document.addEventListener('DOMContentLoaded', () => {
+        const homeSection = document.getElementById('home');
+        if (!('IntersectionObserver' in window) || !homeSection) { mount(); return; }
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) mount();
+                else {
+                    const rect = e.boundingClientRect;
+                    const vh = window.innerHeight || document.documentElement.clientHeight;
+                    const fullyOut = rect.bottom <= 0 || rect.top >= vh;
+                    if (fullyOut) unmount();
+                }
+            });
+        }, { threshold: [0, 0.01] });
+        obs.observe(homeSection);
+    });
+
+    // Cleanup
+    window.addEventListener('beforeunload', unmount);
+})();
+
+// Corner Cat interactions (background, top-right)
+(function setupCornerCat(){
+  const cat = document.querySelector('.corner-cat-bg');
+  if (!cat) return;
+  let timer = null;
+  function sleep() {
+    cat.classList.remove('wake');
+    cat.classList.add('sleep');
+    // after transition settle, remove helper class
+    setTimeout(() => cat.classList.remove('sleep'), 300);
+  }
+  function wake() {
+    cat.classList.add('wake');
+  }
+  cat.addEventListener('click', () => {
+    wake();
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(sleep, 2000);
+  });
+  window.addEventListener('beforeunload', () => { if (timer) clearTimeout(timer); });
+})();
