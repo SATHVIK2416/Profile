@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Portfolio of Sathvik S Rao — developer and designer building efficient digital experiences.">
+    <meta name="theme-color" content="#000000">
     <title>Sathvik S Rao | Developer</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- Apple-style Navigation -->
@@ -31,11 +30,10 @@
 
     <!-- Hero Section -->
     <section id="home" class="hero">
+        <div id="vanta-bg" class="vanta-layer"></div>
         <div class="hero-content">
             <div class="profile-container">
-                <div class="profile-image parallax-element">
-                    👨‍💻
-                </div>
+                <div class="profile-image parallax-element">👨‍💻</div>
             </div>
             <h1 class="hero-title">Sathvik S Rao</h1>
             <p class="hero-subtitle">Developer • Designer • Problem Solver</p>
@@ -55,7 +53,7 @@
             <h2 class="section-title" data-animate>About Me</h2>
             <div class="about-content" data-animate>
                 <p class="about-description">Developer focused on creating efficient, scalable solutions. I work with modern technologies to build clean, functional applications that solve real problems.</p>
-                <p class="about-description">Currently based in South India, working on web applications and exploring new technologies.</p>
+                <p class="about-description">Currently based in Bengaluru, India — working on web applications and exploring new technologies.</p>
                 <div class="about-stats">
                     <div class="stat-card" data-animate data-delay="200">
                         <span class="stat-number">3+</span>
@@ -124,23 +122,31 @@
                 <div class="contact-info" data-animate data-delay="200">
                     <div class="contact-item">
                         <span class="contact-label">Email</span>
-                        <span class="contact-value">sathvik@example.com</span>
+                        <span class="contact-value"><a href="mailto:sathvik1616@gmail.com">sathvik1616@gmail.com</a></span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-label">Phone</span>
+                        <span class="contact-value"><a href="tel:+917022925225">+91 70229 25225</a></span>
                     </div>
                     <div class="contact-item">
                         <span class="contact-label">LinkedIn</span>
-                        <span class="contact-value">linkedin.com/in/sathvik-s-rao</span>
+                        <span class="contact-value"><a href="https://www.linkedin.com/in/sathvik-s-rao/" target="_blank" rel="noopener noreferrer">linkedin.com/in/sathvik-s-rao</a></span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="contact-label">Instagram</span>
+                        <span class="contact-value"><a href="https://www.instagram.com/sathvik_2416/?hl=en" target="_blank" rel="noopener noreferrer">@sathvik_2416</a></span>
                     </div>
                     <div class="contact-item">
                         <span class="contact-label">GitHub</span>
-                        <span class="contact-value">github.com/SATHVIK2416</span>
+                        <span class="contact-value"><a href="https://github.com/SATHVIK2416" target="_blank" rel="noopener noreferrer">github.com/SATHVIK2416</a></span>
                     </div>
                     <div class="contact-item">
                         <span class="contact-label">Location</span>
-                        <span class="contact-value">South India</span>
+                        <span class="contact-value">Bengaluru</span>
                     </div>
                 </div>
                 <div class="contact-buttons" data-animate data-delay="400">
-                    <a href="mailto:sathvik@example.com" class="cta-button">Contact Me</a>
+                    <a href="mailto:sathvik1616@gmail.com" class="cta-button">Contact Me</a>
                 </div>
             </div>
         </div>
@@ -153,6 +159,10 @@
         </div>
     </footer>
 
+    <!-- Vanta background scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.dots.min.js"></script>
+    <!-- Main script -->
     <script src="script.js"></script>
 </body>
 </html>

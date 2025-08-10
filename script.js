@@ -110,6 +110,25 @@ document.addEventListener('DOMContentLoaded', function() {
     skillPills.forEach((pill, index) => {
         pill.setAttribute('data-delay', index * 100);
     });
+
+    // Initialize Vanta DOTS background on hero (skip if reduced motion is enabled)
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const vantaEl = document.getElementById('vanta-bg');
+    if (!prefersReduced && window.VANTA && window.VANTA.DOTS && vantaEl) {
+        window.vantaEffect = window.VANTA.DOTS({
+            el: vantaEl,
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.0,
+            minWidth: 200.0,
+            scale: 1.0,
+            scaleMobile: 1.0,
+            color: 0x007aff,
+            color2: 0xffffff,
+            backgroundColor: 0x000000
+        });
+    }
 });
 
 // Apple-style preloader
@@ -161,3 +180,11 @@ const throttledScrollHandler = throttle(function() {
 }, 16); // ~60fps
 
 window.addEventListener('scroll', throttledScrollHandler);
+
+// Dispose Vanta on unload to avoid memory leaks
+window.addEventListener('beforeunload', function() {
+    if (window.vantaEffect && typeof window.vantaEffect.destroy === 'function') {
+        window.vantaEffect.destroy();
+        window.vantaEffect = null;
+    }
+});
