@@ -1,9 +1,11 @@
-/* Reset and Base Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Apple-Style Profile Website */
+:root {
+    --apple-blue: #007AFF;
+    --apple-gray: #8E8E93;
+    --apple-light-gray: #F2F2F7;
+    --apple-dark: #1D1D1F;
+    --apple-white: #FBFBFD;
+    --apple-black: #000000;
 
 html {
     scroll-behavior: smooth;
