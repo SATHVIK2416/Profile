@@ -112,7 +112,7 @@ body {
 .about-content.animate { opacity: 1; transform: translateY(0); }
 .about-description { font-size: 18px; color: #C7C7CC; margin-bottom: 16px; }
 .about-stats { display: flex; justify-content: center; gap: 40px; margin-top: 26px; flex-wrap: wrap; }
-.stat-card { text-align: center; opacity: 0; transform: translateY(24px); transition: .6s ease; padding: 8px 12px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+.stat-card { text-align: center; opacity: 0; transform: translateY(24px); transition: .6s ease; padding: 8px 12px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); width:160px; }
 .stat-card.animate { opacity: 1; transform: translateY(0); }
 .stat-number { display: block; font-size: 28px; font-weight: 800; color: var(--apple-blue); margin-bottom: 4px; }
 .stat-label { font-size: 14px; color: var(--apple-gray); }
